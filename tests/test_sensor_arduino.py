@@ -7,6 +7,7 @@ from src.config import SAUDACAO_TOTEM
 from src.ia_groq import ClienteIA
 from src.reconhecimento import GerenciadorFacial
 from src.sensor_arduino import SensorArduino
+from src.servicos import ServicosWeb
 
 
 class TestSensorArduino(unittest.TestCase):
@@ -145,6 +146,46 @@ class TestSensorArduino(unittest.TestCase):
             choices=[SimpleNamespace(message=SimpleNamespace(content="PERMITIR"))]
         )
         self.assertTrue(ia.avaliar_seguranca_termo("horário do metrô"))
+
+    def test_eco_tolerante_e_roteamento_citizentech(self):
+        assistente = AssistenteBruxo.__new__(AssistenteBruxo)
+        assistente.voz = MagicMock()
+        assistente.easter_eggs = MagicMock()
+        assistente.easter_eggs.processar.return_value = False
+        assistente.ia = MagicMock()
+        assistente.ia.perguntar.return_value = "Siga pela plataforma dois."
+        assistente._sessao_totem_ate = 0.0
+
+        # Eco com pequena variação de transcrição ou sem acentos deve ser descartado
+        self.assertTrue(
+            assistente._eh_eco("ola bem vindo ao toten cidadao detectei a sua aproximacao", SAUDACAO_TOTEM)
+        )
+        # Pergunta legítima do cidadão NÃO pode ser tratada como eco
+        self.assertFalse(assistente._eh_eco("como chego no posto de saude", SAUDACAO_TOTEM))
+
+        # Perguntas cidadãs com "dia", "hora", "ajuda" ou "tempo" não devem cair em atalhos falsos
+        assistente.processar_comando("bom dia onde fica a pediatria", fonte=None)
+        assistente.ia.perguntar.assert_called_with("bom dia onde fica a pediatria")
+
+        assistente.ia.perguntar.reset_mock()
+        assistente.processar_comando("qual o horario de funcionamento do posto", fonte=None)
+        assistente.ia.perguntar.assert_called_with("qual o horario de funcionamento do posto")
+
+        assistente.ia.perguntar.reset_mock()
+        assistente.processar_comando("preciso de ajuda para achar o metro", fonte=None)
+        assistente.ia.perguntar.assert_called_with("preciso de ajuda para achar o metro")
+
+        # Pergunta explícita de horas ainda aciona o utilitário local
+        assistente.ia.perguntar.reset_mock()
+        assistente.voz.falar.reset_mock()
+        assistente.processar_comando("que horas são", fonte=None)
+        assistente.ia.perguntar.assert_not_called()
+        assistente.voz.falar.assert_called_once()
+
+        # Formatação da cotação do dólar mantém ponto final correto
+        with patch("src.servicos.requests.get", return_value=SimpleNamespace(json=lambda: {"USDBRL": {"bid": "5.55"}})):
+            msg_dolar = ServicosWeb().obter_cotacao_dolar()
+        self.assertEqual(msg_dolar, "A cotação atual do dólar é de 5,55 reais.")
 
 
 if __name__ == "__main__":

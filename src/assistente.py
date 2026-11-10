@@ -1,5 +1,8 @@
 import datetime
+from difflib import SequenceMatcher
+import re
 import time
+import unicodedata
 import webbrowser
 import speech_recognition as sr
 from src.agenda import GerenciadorAgenda
@@ -47,30 +50,40 @@ class AssistenteBruxo:
         self.processando_comando = False
         self._sessao_totem_ate = 0.0
 
+    @staticmethod
+    def _normalizar_texto_eco(texto: str) -> str:
+        sem_acento = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
+        limpo = re.sub(r"[^a-z0-9\s]", " ", sem_acento.lower())
+        return " ".join(limpo.split())
+
     def _eh_eco(self, resposta: str, pergunta: str) -> bool:
         """
         Verifica se o que foi captado pelo microfone foi apenas o áudio
         da própria pergunta dita pelo assistente saindo pela caixa de som.
         """
-        resp = resposta.strip().lower().replace("-", " ")
-        perg = pergunta.strip().lower().replace("-", " ")
+        resp = self._normalizar_texto_eco(resposta or "")
+        perg = self._normalizar_texto_eco(pergunta or "")
 
-        # Remove pontuações simples
-        for p in "?!.,:;\"'":
-            resp = resp.replace(p, "")
-            perg = perg.replace(p, "")
-
-        if not resp:
+        if not resp or not perg:
             return False
 
         # Se a resposta for exatamente igual à pergunta
         if resp == perg:
             return True
 
-        # Se for uma frase longa (4+ palavras) e for um trecho da fala do totem
+        # Se for uma frase longa (4+ palavras) e trecho contíguo da fala do totem
         palavras_resp = resp.split()
         if len(palavras_resp) >= 4 and resp in perg:
             return True
+
+        # Tolerância a pequenas falhas de transcrição/pontuação em trechos com 5+ palavras
+        if len(palavras_resp) >= 5:
+            palavras_perg = perg.split()
+            correspondencias = sum(
+                bloco.size for bloco in SequenceMatcher(None, palavras_resp, palavras_perg).get_matching_blocks()
+            )
+            if (correspondencias / len(palavras_resp)) >= 0.75:
+                return True
 
         return False
 
@@ -391,15 +404,24 @@ class AssistenteBruxo:
             return True
 
         # Ajuda e Lista de Comandos
-        elif any(t in comando for t in ["comando", "comandos", "ajuda", "menu"]):
+        elif (
+            any(t in comando for t in ["comando", "comandos", "lista de comandos", "menu"])
+            or comando in ["ajuda", "help", "socorro"]
+        ):
             self.listar_comandos()
             return True
 
         # Horas e Data
-        elif any(t in comando for t in ["hora", "horas"]):
+        elif (
+            any(t in comando for t in ["que horas", "que hora", "horas são", "horas sao", "me diga a hora", "qual a hora", "qual é a hora", "qual e a hora"])
+            or comando in ["hora", "horas"]
+        ):
             self.voz.falar(self.obter_horas())
             return True
-        elif any(t in comando for t in ["dia", "data"]):
+        elif (
+            any(t in comando for t in ["que dia é hoje", "que dia e hoje", "qual o dia de hoje", "dia de hoje", "qual a data", "qual é a data", "qual e a data", "data de hoje"])
+            or comando in ["dia", "data", "que dia é", "que dia e"]
+        ):
             self.voz.falar(self.obter_data())
             return True
 
@@ -469,7 +491,7 @@ class AssistenteBruxo:
     def _tratar_midia_e_sistema(self, comando: str, fonte) -> bool:
         """Processa controle de hardware, volume, prints e leitura OCR."""
         # Volume e Controle de Som
-        if any(t in comando for t in ["volume", "mutar", "mudo", "som", "desmutar", "silenciar"]):
+        if re.search(r"\b(volume|mutar|mudo|som|desmutar|silenciar)\b", comando):
             if any(t in comando for t in ["desmutar", "desmuta", "voltar som", "volta o som", "tirar mudo", "tira o mudo", "reativar som", "desmutado"]):
                 self.sistema.mutar_desmutar()
                 self.voz.falar("Som restaurado.")
@@ -487,7 +509,9 @@ class AssistenteBruxo:
             return True
 
         # Pausar / Despausar Mídia
-        elif any(t in comando for t in ["pausa", "despausa", "play", "parar", "continuar", "paus"]):
+        elif re.search(r"\b(pausar?|despausar?|play|pause)\b", comando) or any(
+            t in comando for t in ["parar música", "parar musica", "continuar música", "continuar musica", "parar som", "continuar som"]
+        ):
             self.sistema.pausar_despausar()
             self.voz.falar("Feito.")
             return True
@@ -518,7 +542,10 @@ class AssistenteBruxo:
     def _tratar_web_e_servicos(self, comando: str, fonte) -> bool:
         """Processa buscas na web, YouTube, Spotify e APIs externas."""
         # Previsão do Tempo (Clima)
-        if any(t in comando for t in ["clima", "temperatura", "previsão", "previsao", "tempo"]):
+        if any(t in comando for t in [
+            "clima", "temperatura", "previsão", "previsao",
+            "como está o tempo", "como esta o tempo", "tempo hoje", "tempo agora"
+        ]):
             print("[AGUARDANDO NOME DA CIDADE...]")
             cidade = self.perguntar(
                 "De qual cidade você quer saber a temperatura?",
@@ -556,7 +583,10 @@ class AssistenteBruxo:
             return True
 
         # Tocar no Spotify Desktop
-        elif any(t in comando for t in ["spotify", "ouvir", "tocar", "escutar", "música", "musica", "som"]) and not any(t in comando for t in ["parar", "pausar", "despausar", "paus"]):
+        elif (
+            any(t in comando for t in ["spotify", "música", "musica"])
+            or any(comando.startswith(p) or f"quero {p}" in comando or f"gostaria de {p}" in comando for p in ["ouvir ", "tocar ", "escutar "])
+        ) and not any(t in comando for t in ["parar", "pausar", "despausar", "paus"]):
             if "youtube" not in comando and "vídeo" not in comando and "video" not in comando:
                 comando_limpo = comando.replace("quero", "").replace("gostaria de", "").strip()
                 artista = None
@@ -770,8 +800,14 @@ class AssistenteBruxo:
     # LOOP PRINCIPAL DE ESCUTA
     # ==========================================
 
-    def iniciar(self):
-        with sr.Microphone() as fonte:
+    def iniciar(self, ao_pronto=None):
+        try:
+            microfone_cm = sr.Microphone()
+        except OSError as e:
+            print(f"[ERRO MICROFONE]: Não foi possível abrir o microfone ({type(e).__name__}).")
+            return
+
+        with microfone_cm as fonte:
             separador = "=" * 60
             print(separador)
             print("[INICIO] TOTEM CIDADÃO BRUXO (CITIZENTECH)")
@@ -779,6 +815,8 @@ class AssistenteBruxo:
             print("[CALIBRANDO] Ajustando ruído ambiente do microfone... Aguarde 1s.")
             self.microfone.calibrar(fonte, duracao=1)
             print(f"[STANDBY] Totem em vigilância! Aproxime-se (< 50 cm) ou diga '{self.nome.capitalize()}'...")
+            if ao_pronto:
+                ao_pronto()
             
             while True:
                 try:

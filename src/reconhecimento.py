@@ -110,12 +110,22 @@ class GerenciadorFacial:
 
     def capturar_rosto(self, nome: str) -> bool:
         """Abre a webcam, localiza o rosto e salva amostras padronizadas rapidamente."""
+        if not hasattr(cv2, "CascadeClassifier") or not hasattr(getattr(cv2, "face", None), "LBPHFaceRecognizer_create"):
+            print("[ERRO VISÃO]: OpenCV atual não suporta CascadeClassifier/LBPH. Instale opencv-contrib-python<5.0.")
+            return False
+
         pasta_usuario = self._caminho_usuario_seguro(nome)
         if not pasta_usuario:
             print("[ERRO] Nome inválido para cadastro facial.")
             return False
         if not os.path.exists(pasta_usuario):
             os.makedirs(pasta_usuario)
+
+        cascade_path = self._obter_cascade()
+        face_cascade = cv2.CascadeClassifier(cascade_path)
+        if face_cascade.empty():
+            print("[ERRO] Arquivo de detecção de rosto ausente ou corrompido.")
+            return False
 
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         if not cap.isOpened():
@@ -127,13 +137,6 @@ class GerenciadorFacial:
         # Configura resolução 640x480 para rodar com alta performance em qualquer notebook
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-        cascade_path = self._obter_cascade()
-        face_cascade = cv2.CascadeClassifier(cascade_path)
-        
-        if face_cascade.empty():
-            print("[ERRO] Arquivo de detecção de rosto ausente ou corrompido.")
-            return False
 
         fotos_tiradas = 0
         max_fotos = 15
@@ -238,11 +241,21 @@ class GerenciadorFacial:
 
     def reconhecer_rosto(self) -> str:
         """Abre a câmera, procura por um rosto e tenta adivinhar quem é de forma rápida."""
+        if not hasattr(cv2, "CascadeClassifier"):
+            print("[ERRO VISÃO]: OpenCV atual não suporta CascadeClassifier. Instale opencv-contrib-python<5.0.")
+            return None
+
         if getattr(self, 'modelo', None) is None:
             sucesso = self.treinar_modelo()
             if not sucesso:
                 return None
-                
+
+        cascade_path = self._obter_cascade()
+        face_cascade = cv2.CascadeClassifier(cascade_path)
+        if face_cascade.empty():
+            print("[ERRO] Arquivo de detecção de rosto ausente ou corrompido.")
+            return None
+
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         if not cap.isOpened():
             cap = cv2.VideoCapture(0)
@@ -251,13 +264,6 @@ class GerenciadorFacial:
             
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-        cascade_path = self._obter_cascade()
-        face_cascade = cv2.CascadeClassifier(cascade_path)
-        
-        if face_cascade.empty():
-            print("[ERRO] Arquivo de detecção de rosto ausente ou corrompido.")
-            return None
         
         start_time = time.time()
         nome_reconhecido = None

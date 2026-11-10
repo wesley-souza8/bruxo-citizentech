@@ -48,7 +48,8 @@ class ServicosWeb:
             url = "https://economia.awesomeapi.com.br/json/last/USD-BRL"
             res = requests.get(url, timeout=self._TIMEOUT_HTTP).json()
             valor = float(res["USDBRL"]["bid"])
-            return f"A cotação atual do dólar é de {valor:.2f} reais.".replace(".", ",")
+            valor_fmt = f"{valor:.2f}".replace(".", ",")
+            return f"A cotação atual do dólar é de {valor_fmt} reais."
         except Exception as e:
             print(f"[ERRO COTAÇÃO]: Falha na consulta ({type(e).__name__}).")
             return "Não consegui acessar a cotação do dólar no momento."

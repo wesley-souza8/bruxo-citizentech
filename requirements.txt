@@ -6,12 +6,11 @@ pyautogui>=0.9.54
 Pillow>=10.0.0
 groq>=0.11.0
 python-dotenv>=1.0.0
-edge-tts>=7.0.0
+edge-tts>=7.3.1
 requests>=2.31.0
 pycaw>=20230407
 comtypes>=1.2.0
-opencv-python
-opencv-contrib-python
+opencv-contrib-python>=4.8.0,<5.0.0
 numpy
 easyocr
 pyserial>=3.5

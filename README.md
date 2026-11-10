@@ -210,13 +210,13 @@ Consulte a simulação validada em [`img/Circuito.png`](img/Circuito.png) e faç
 | **Buzzer Piezo** | Negativo (`-`) | `GND` | Referência terra |
 
 #### Lógica do Firmware (`arduino/totem_sensor.ino`)
-1. Opera na taxa serial de **`9600 baud`**.
+1. Opera na taxa serial de **`9600 baud`** sem exigir bibliotecas externas.
 2. Emite pulsos ultrassônicos no pino `9` e mede o eco no pino `10` (com timeout de `30 ms` para ~5 metros e prevenção de falso positivo `0 cm`).
-3. Quando a distância medida é válida (`> 0`) e **`<= 50 cm`** (`DISTANCIA_GATILHO`):
-   * Acende o **LED Verde** (`D13`);
-   * Emite o bip curto de confirmação no **Buzzer** (`D8`, `1200 Hz` por `100 ms`).
-4. Quando a distância é superior a `50 cm`, mantém o LED apagado e o buzzer silenciado (`noTone`).
-5. Envia toda leitura válida (`distancia > 0`) pela Serial (`Serial.println(distancia)`) a cada `200 ms`, permitindo tanto o gatilho `< 50 cm` quanto a telemetria de **Standby (`> 50 cm`)** no Python (`src/sensor_arduino.py`).
+3. Quando a distância medida é válida (`> 0`) e **`< 50 cm`** (`DISTANCIA_GATILHO`):
+   * Mantém o **LED Verde** (`D13`) aceso durante todo o atendimento;
+   * Emite **1 bip curto de chegada** no **Buzzer** (`D8`, `1200 Hz` por `100 ms`, acionado apenas na transição de entrada para não interferir na captação de voz pelo microfone).
+4. Com histerese de saída (`>= 55 cm` ou 3 leituras consecutivas sem eco), apaga o LED, silencia o buzzer (`noTone`) e libera o próximo disparo.
+5. Envia toda leitura válida (`distancia > 0`) pela Serial (`Serial.println(distancia)`) a cada `200 ms`, permitindo o gatilho `< 50 cm` e a telemetria de **Standby (`>= 50 cm`)** no Python (`src/sensor_arduino.py`).
 
 ---
 
@@ -237,11 +237,15 @@ Consulte a simulação validada em [`img/Circuito.png`](img/Circuito.png) e faç
 
 ### 5. Configuração de Software e Execução
 
-#### Passo A: Gravação do Firmware no Arduino Uno
-1. Abra a **Arduino IDE** e conecte o cabo USB do Arduino ao computador.
-2. Abra o arquivo [`arduino/totem_sensor.ino`](arduino/totem_sensor.ino).
-3. Em **Ferramentas → Placa**, selecione **Arduino Uno**; em **Ferramentas → Porta**, selecione a porta serial identificada (ex.: `COM3` no Windows ou `/dev/ttyACM0` no Linux).
-4. Clique em **Carregar (Upload)** e feche o Monitor Serial da IDE antes de iniciar o Python (para liberar a porta COM).
+#### Passo A: Configuração da Arduino IDE e Gravação do Firmware
+1. Instale a **Arduino IDE 2.x** (site oficial `arduino.cc/en/software`). Não é preciso instalar nenhuma biblioteca externa.
+2. Conecte o cabo USB do Arduino Uno ao computador. *(Caso use uma placa compatível/clone e não apareça uma porta `COM` nova, instale o driver **CH340G** no Windows.)*
+3. **Importar o código:** Abra a Arduino IDE → **Arquivo → Novo Sketch**, apague o conteúdo padrão e cole integralmente o código de [`arduino/totem_sensor.ino`](arduino/totem_sensor.ino) *(ou salve uma cópia em pasta chamada `totem_sensor/`, evitando mover o arquivo dentro do repositório Git caso a IDE peça para criar pasta)*.
+4. **Selecionar Placa e Porta:**
+   * **Ferramentas → Placa → Arduino AVR Boards → Arduino Uno**.
+   * **Ferramentas → Porta →** selecione a porta USB identificada (ex.: `COM3` / `COM4` no Windows ou `/dev/ttyACM0` no Linux; ignore `COM1` legado).
+5. Clique em **Verificar (`✓`)** para compilar e depois em **Carregar (`→`)** até aparecer *"Done uploading / Carregamento concluído"*.
+6. *(Teste rápido opcional)* Abra o **Monitor Serial** (`Ctrl + Shift + M`), ajuste para **`9600 baud`**, passe a mão a `< 50 cm` e confirme o LED verde acendendo, 1 bip curto e os números em cm. **Feche o Monitor Serial antes de rodar o Python** (senão a porta COM fica ocupada).
 
 #### Passo B: Instalação e Execução do Assistente Bruxo
 
@@ -264,7 +268,7 @@ Consulte a simulação validada em [`img/Circuito.png`](img/Circuito.png) e faç
    ```bash
    pip install -r requirements.txt
    ```
-   > **Nota:** Mantenha `opencv-contrib-python` (suporte a `cv2.face`) e `pyserial` (leitura serial do Arduino).
+   > **Nota:** Mantenha `opencv-contrib-python>=4.8.0,<5.0.0` (suporte a `CascadeClassifier` e `cv2.face`, removidos no OpenCV 5.x) e `pyserial` (leitura serial do Arduino). Caso o `easyocr` sobrescreva dependências de visualização, execute `pip install --force-reinstall "opencv-contrib-python>=4.8.0,<5.0.0"`.
 4. **Configurar variáveis de ambiente (`.env`):**
    ```powershell
    Copy-Item .env.example .env

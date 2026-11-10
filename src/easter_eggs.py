@@ -1,4 +1,5 @@
-﻿import webbrowser
+import re
+import webbrowser
 
 
 class GerenciadorEasterEggs:
@@ -15,7 +16,7 @@ class GerenciadorEasterEggs:
         comando_limpo = comando.strip().lower()
 
         # 1. EASTER EGG: ALANZOKA
-        if any(t in comando_limpo for t in ["alanzoka", "alan zoka", "alanzo", "alan", "allan"]):
+        if re.search(r"\b(alanzoka|alan zoka|alanzo|alan|allan)\b", comando_limpo):
             voz.falar("Nextage, bebê!")
             return True
 

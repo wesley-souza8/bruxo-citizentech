@@ -26,10 +26,9 @@ def main():
         distancia_limite_cm=DISTANCIA_ATIVACAO_CM,
         cooldown_segundos=COOLDOWN_TOTEM_SEGUNDOS,
     )
-    sensor.iniciar()
 
     try:
-        assistente.iniciar()
+        assistente.iniciar(ao_pronto=sensor.iniciar)
     finally:
         sensor.parar()
 
