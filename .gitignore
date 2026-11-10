@@ -1,0 +1,48 @@
+# =========================
+# Memória Local da IA
+# =========================
+contexto.md
+
+# =========================
+# Ambientes e Dependências
+# =========================
+.env
+.env.local
+venv/
+env/
+.venv/
+Scripts/
+
+# =========================
+# Python & Cache
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# =========================
+# Configurações de IDEs
+# =========================
+.vscode/
+.idea/
+*.swp
+
+# =========================
+# Temporários e Logs
+# =========================
+*.mp3
+*.log
+
+# =========================
+# Dados de Runtime do Projeto
+# =========================
+agenda.txt
+
+# Ignorar datasets e capturas geradas em runtime, mantendo pastas base no repo
+rostos/*
+!rostos/.gitkeep
+
+img/prints/*
+!img/prints/.gitkeep
