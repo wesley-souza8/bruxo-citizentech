@@ -6,8 +6,7 @@ from src.config import PASTA_IMG
 
 class GerenciadorCaptura:
     """
-    Classe responsável pela captura de tela e gerenciamento da pasta img/.
-    Atende ao item 10 do Checkpoint 4 e funções de limpeza de imagens.
+    Classe responsável pela captura de tela e gerenciamento da pasta img/prints/.
     """
 
     def __init__(self, pasta_img: str = PASTA_IMG):
@@ -16,7 +15,7 @@ class GerenciadorCaptura:
 
     def tirar_print(self) -> str | None:
         """
-        Captura a tela inteira e salva com carimbo de data/hora em img/.
+        Captura a tela inteira e salva com carimbo de data/hora em img/prints/.
         Retorna o caminho do arquivo salvo ou None em caso de erro.
         """
         try:
@@ -35,7 +34,7 @@ class GerenciadorCaptura:
 
     def limpar_fotos(self) -> tuple[int, bool]:
         """
-        Apaga todas as imagens (.png, .jpg, .jpeg) contidas na pasta img/.
+        Apaga todas as imagens (.png, .jpg, .jpeg) contidas na pasta img/prints/.
         Retorna (quantidade_arquivos_removidos, sucesso).
         """
         try:
@@ -53,7 +52,7 @@ class GerenciadorCaptura:
                         os.remove(caminho)
                         removidos += 1
 
-            print(f"[FOTOS LIMPAS]: {removidos} imagem(ns) removida(s) da pasta img/.")
+            print(f"[FOTOS LIMPAS]: {removidos} imagem(ns) removida(s) da pasta img/prints/.")
             return removidos, True
         except Exception as e:
             print(f"[ERRO CAPTURA]: Falha ao limpar fotos: {e}")

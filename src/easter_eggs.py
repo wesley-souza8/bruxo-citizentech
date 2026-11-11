@@ -16,33 +16,16 @@ class GerenciadorEasterEggs:
         comando_limpo = comando.strip().lower()
 
         # 1. EASTER EGG: ALANZOKA
-        if re.search(r"\b(alanzoka|alan zoka|alanzo|alan|allan)\b", comando_limpo):
+        if re.search(r"\b(alanzoka|alan zoka|alanzo)\b", comando_limpo):
             voz.falar("Nextage, bebê!")
             return True
 
         # 2. EASTER EGG: PEGA NO BREU
         elif any(t in comando_limpo for t in [
-            "pega no breu", "gaitaço", "gaitaco", "ronaldo",
+            "pega no breu", "gaitaço", "gaitaco",
             "agro pesca jacaré", "agro pesca jacare", "pega no bre"
         ]):
             webbrowser.open("https://www.youtube.com/watch?v=TFdO7oqkMzI")
-            return True
-
-        # 3. EASTER EGG: AXT VS SKIPINHO (DISCUSSÃO DOS GAMES)
-        elif any(t in comando_limpo for t in [
-            "skipinho", "skpinho", "axt", "yetz", "crucificaram o yetz",
-            "e aí não", "e ai nao", "eae não", "eae nao", "e aí o que", "e ai o que",
-            "e aí mano", "e ai mano", "e aí ué", "e ai ue", "e aí skipinho", "e ai skipinho"
-        ]) or comando_limpo in ["iai", "e aí", "e ai", "eae", "e aí?", "e ai?"]:
-            dialogo = (
-                "E aí mano? "
-                "Não, e aí não! A gente sempre jogou junto quando crucificaram o Yetz. "
-                "Você não é criança e nem eu sou. Xiu é o caralho! "
-                "Uma vez você me desrespeitou e falou da minha família e agora eu tô falando contigo igual homem! "
-                "É? Então beleza. Então foda-se seu merda, seu babaca, seu criança, seu merda!"
-            )
-            print("\n[CLÁSSICO]: Axt vs Skipinho\n" + dialogo + "\n")
-            voz.falar(dialogo, velocidade="+25%")
             return True
 
         return False

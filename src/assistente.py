@@ -153,12 +153,12 @@ class AssistenteBruxo:
     # ==========================================
 
     def obter_horas(self) -> str:
-        """Item 4: Retorna a hora atual por extenso."""
+        """Retorna a hora atual por extenso."""
         agora = datetime.datetime.now()
         return f"Agora são {agora.hour} horas e {agora.minute} minutos."
 
     def obter_data(self) -> str:
-        """Item 5: Retorna a data atual por extenso."""
+        """Retorna a data atual por extenso."""
         agora = datetime.datetime.now()
         meses = [
             "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -167,7 +167,7 @@ class AssistenteBruxo:
         return f"Hoje é dia {agora.day} de {meses[agora.month - 1]} de {agora.year}."
 
     # ==========================================
-    # MÉTODOS DE AGENDA (Itens 2, 3 e 8)
+    # MÉTODOS DE AGENDA
     # ==========================================
 
     def cadastrar_evento(self, fonte):
@@ -210,7 +210,7 @@ class AssistenteBruxo:
             self.voz.falar("Houve um erro ao limpar sua agenda.")
 
     # ==========================================
-    # CAPTURA E LIMPEZA DE IMAGENS (Item 10)
+    # CAPTURA E LIMPEZA DE IMAGENS
     # ==========================================
 
     def tirar_print(self):
@@ -352,7 +352,7 @@ class AssistenteBruxo:
             "  5. Web e Produtividade: Pesquisar no Google com filtro IA e abrir o portal da FIAP.\n"
             "  6. Informações Úteis: Previsão do tempo de qualquer cidade e cotação do dólar.\n"
             "  7. Controle de Sistema: Volume, play/pause de mídia e captura de tela (prints).\n"
-            "  8. IA Generativa: Conversar e tirar dúvidas usando LLaMA via Groq Cloud.\n"
+            "  8. IA Generativa: Conversar e tirar dúvidas usando modelos via Groq Cloud.\n"
             f"{separador}\n"
         )
         print(apresentacao_terminal)

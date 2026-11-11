@@ -5,7 +5,6 @@ from src.config import GROQ_API_KEY, MODELO_GROQ_PRINCIPAL, MODELO_GROQ_FALLBACK
 class ClienteIA:
     """
     Classe responsável pela comunicação com o modelo de IA generativa via Groq Cloud.
-    Atende ao item 9 do Checkpoint 4.
     """
 
     _MAX_CHARS_PERGUNTA = 1000

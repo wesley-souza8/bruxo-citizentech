@@ -5,7 +5,6 @@ from src.config import ARQUIVO_AGENDA
 class GerenciadorAgenda:
     """
     Classe responsável pelas operações de persistência de eventos na agenda (agenda.txt).
-    Atende aos itens 2, 3 e 8 do Checkpoint 4.
     """
 
     def __init__(self, caminho_arquivo: str = ARQUIVO_AGENDA):

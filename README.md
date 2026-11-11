@@ -7,7 +7,7 @@
 [![Edge-TTS](https://img.shields.io/badge/TTS-Microsoft%20Neural-purple.svg)](https://github.com/rany2/edge-tts)
 [![Groq AI](https://img.shields.io/badge/AI-Groq%20Cloud%20LPU-orange.svg)](https://groq.com/)
 
-> **🎬 Vídeo Demonstrativo (YouTube – Não Listado):** **[Assistir no YouTube](https://youtu.be/kwnly-5X-Mo)** (`https://youtu.be/kwnly-5X-Mo`) — Roteiros e checklist em [`docs/ROTEIRO_VIDEO.md`](docs/ROTEIRO_VIDEO.md).
+> **🎬 Vídeo Demonstrativo (YouTube – Não Listado):** **[Assistir no YouTube](https://youtu.be/kwnly-5X-Mo)** (`https://youtu.be/kwnly-5X-Mo`)
 
 > **👥 Equipe (`4ESR` – FIAP Global Solution 2026):** **Deivison Pertel** (`RM 550803`) · **Eduardo Akira Murata** (`RM 98713`) · **Wesley Souza de Oliveira** (`RM 97874`)
 
@@ -30,7 +30,7 @@
 | **Hardware Embarcado** | Arduino Uno R3, Sensor Ultrassônico HC-SR04, LED Verde (resistor 220 Ω), Buzzer Piezoelétrico, Mini-protoboard |
 | **Gabinete Físico** | MDF 3 mm modelado parametricamente no **SolidCraft** (`cad/totem_bruxo_makerlab.sc` / `.json` / `-view.dxf`) |
 | **Integração Hardware ↔ Software** | Comunicação Serial USB (`9600 baud`) via leitor não-bloqueante em Python (`pyserial`) |
-| **Vídeo Demonstrativo (YouTube)** | [https://youtu.be/kwnly-5X-Mo](https://youtu.be/kwnly-5X-Mo) ([Roteiro](docs/ROTEIRO_VIDEO.md)) |
+| **Vídeo Demonstrativo (YouTube)** | [https://youtu.be/kwnly-5X-Mo](https://youtu.be/kwnly-5X-Mo) |
 
 ### 👥 Integrantes do Grupo
 * **Deivison Pertel** – RM `550803`
@@ -84,9 +84,6 @@ bruxo-citizentech/
 │   ├── totem_bruxo_makerlab.sc        # Projeto nativo SolidCraft
 │   ├── totem_bruxo_makerlab.json      # Modelo paramétrico SolidCraft
 │   └── totem_bruxo_makerlab-view.dxf  # Vetor de corte a laser sem arestas ocultas (MDF 3 mm)
-│
-├── docs/
-│   └── ROTEIRO_VIDEO.md               # Roteiro estruturado para o vídeo de até 6 minutos
 │
 ├── img/
 │   ├── Base_Fundo_Superior.png        # Cotas CAD: Base e Tampa (120 x 100 mm)
@@ -232,7 +229,7 @@ Consulte a simulação validada em [`img/Circuito.png`](img/Circuito.png) e faç
    * Aplique cola de madeira PVA nas bordas de junção do `Painel_Frontal_Olhos`, `Painel_Traseiro_USB`, `Lateral_Esquerda` e `Lateral_Direita` sobre a `Base_Fundo`.
    * Mantenha as peças em esquadro por ~10 minutos com auxílio de fita crepe até a cura inicial.
 4. **Fechamento com Tampa Removível:**
-   * A `Tampa_Superior` (`120 × 100 mm`) deve permanecer **solta/apenas encaixada** por cima, garantindo acesso rápido aos circuitos para manutenção e demonstração interna durante a gravação do vídeo.
+   * A `Tampa_Superior` (`120 × 100 mm`) deve permanecer **solta/apenas encaixada** por cima, garantindo acesso rápido aos circuitos para manutenção e inspeção interna.
 5. **Conexão ao Computador Host:** Passe o cabo USB-B pelo rasgo traseiro e conecte o Arduino ao computador que executará o assistente **Bruxo** (com microfone, webcam e saída de áudio ativos).
 
 #### Protótipo Físico Montado (Bancada Maker Lab)
@@ -300,6 +297,7 @@ Consulte a simulação validada em [`img/Circuito.png`](img/Circuito.png) e faç
    python main.py
    ```
 
+#### Fluxo Esperado em Execução
 1. O `SensorArduino` (`src/sensor_arduino.py`) detecta automaticamente a porta COM do Arduino e inicia a leitura em **thread não-bloqueante** (`9600 baud`), exibindo telemetria de **Standby** enquanto não houver ninguém a `< 50 cm`.
 2. Ao se aproximar a **menos de 50 cm** do totem:
    * O LED verde acende e o buzzer emite o bip curto de `100 ms`;
