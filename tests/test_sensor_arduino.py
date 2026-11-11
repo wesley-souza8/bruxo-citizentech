@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -128,7 +130,8 @@ class TestSensorArduino(unittest.TestCase):
 
     def test_seguranca_path_traversal_e_filtro_ia(self):
         facial = GerenciadorFacial.__new__(GerenciadorFacial)
-        facial.diretorio = "C:\\temp\\rostos"
+        # Caminho absoluto válido em qualquer SO (como no __init__ real); "C:\\temp\\rostos" é relativo no macOS/Linux
+        facial.diretorio = os.path.abspath(os.path.join(tempfile.gettempdir(), "rostos"))
         self.assertIsNone(facial._caminho_usuario_seguro("../../etc"))
         self.assertIsNone(facial._caminho_usuario_seguro("../segredo"))
         self.assertTrue(facial._caminho_usuario_seguro("João Silva").endswith("joao_silva"))
