@@ -137,7 +137,7 @@
 
 ### 2. Repositório GitHub (`bruxo-citizentech`)
 - [ ] **Visibilidade:** Configurado como **Público** (repositório privado zera a avaliação).
-- [ ] **Link do vídeo no topo:** Inserir a URL do YouTube no destaque do topo do [`README.md`](../README.md).
+- [x] **Link do vídeo no topo:** Inserir a URL do YouTube no destaque do topo do [`README.md`](../README.md) (`https://youtu.be/kwnly-5X-Mo`).
 - [ ] **Identificação completa e Ficha Técnica:** Nomes completos, RMs (`550803`, `98713`, `97874`), turma `4ESR` e Ficha Técnica visíveis logo na abertura do [`README.md`](../README.md).
 - [ ] **Código e fabricação reprodutíveis:** Firmware [`.ino`](../arduino/totem_sensor.ino), código Python modular em [`src/`](../src/) sem caminhos locais absolutos, arquivos de corte/CAD em [`cad/`](../cad/) e guia completo com [`requirements.txt`](../requirements.txt).
 - [ ] **Segurança e sigilo:** Nenhuma chave real (`GROQ_API_KEY`, `OPENWEATHER_API_KEY`, `AWESOME_API_KEY`), `.env` ou `contexto.md` comitado — apenas [`.env.example`](../.env.example).

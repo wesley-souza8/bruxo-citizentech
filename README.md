@@ -7,7 +7,7 @@
 [![Edge-TTS](https://img.shields.io/badge/TTS-Microsoft%20Neural-purple.svg)](https://github.com/rany2/edge-tts)
 [![Groq AI](https://img.shields.io/badge/AI-Groq%20Cloud%20LPU-orange.svg)](https://groq.com/)
 
-> **🎬 Vídeo Demonstrativo (YouTube – Não Listado):** *[Inserir link do YouTube aqui após upload]* — Roteiros (ao vivo e locução em off) + Checklist de entrega em [`docs/ROTEIRO_VIDEO.md`](docs/ROTEIRO_VIDEO.md).
+> **🎬 Vídeo Demonstrativo (YouTube – Não Listado):** **[Assistir no YouTube](https://youtu.be/kwnly-5X-Mo)** (`https://youtu.be/kwnly-5X-Mo`) — Roteiros e checklist em [`docs/ROTEIRO_VIDEO.md`](docs/ROTEIRO_VIDEO.md).
 
 > **👥 Equipe (`4ESR` – FIAP Global Solution 2026):** **Deivison Pertel** (`RM 550803`) · **Eduardo Akira Murata** (`RM 98713`) · **Wesley Souza de Oliveira** (`RM 97874`)
 
@@ -30,7 +30,7 @@
 | **Hardware Embarcado** | Arduino Uno R3, Sensor Ultrassônico HC-SR04, LED Verde (resistor 220 Ω), Buzzer Piezoelétrico, Mini-protoboard |
 | **Gabinete Físico** | MDF 3 mm modelado parametricamente no **SolidCraft** (`cad/totem_bruxo_makerlab.sc` / `.json` / `-view.dxf`) |
 | **Integração Hardware ↔ Software** | Comunicação Serial USB (`9600 baud`) via leitor não-bloqueante em Python (`pyserial`) |
-| **Vídeo Demonstrativo (YouTube)** | *[Link Não Listado a inserir após gravação]* ([Roteiro](docs/ROTEIRO_VIDEO.md)) |
+| **Vídeo Demonstrativo (YouTube)** | [https://youtu.be/kwnly-5X-Mo](https://youtu.be/kwnly-5X-Mo) ([Roteiro](docs/ROTEIRO_VIDEO.md)) |
 
 ### 👥 Integrantes do Grupo
 * **Deivison Pertel** – RM `550803`
