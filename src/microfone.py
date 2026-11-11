@@ -1,3 +1,4 @@
+import time
 import speech_recognition as sr
 from src.config import NOMES_GATILHO, TIMEOUT_PADRAO_ESCUTA, LIMITE_FALA_PADRAO
 
@@ -13,6 +14,8 @@ class OuvinteMicrofone:
         self.reconhecedor.energy_threshold = 300
         self.reconhecedor.dynamic_energy_threshold = True
         self.reconhecedor.pause_threshold = 1.0
+        # Janela (início, fim) em time.monotonic() do último trecho de áudio captado
+        self.ultima_captura: tuple[float, float] | None = None
 
     def calibrar(self, fonte, duracao: int = 1):
         """Ajusta os níveis de sensibilidade para o ruído ambiente."""
@@ -24,9 +27,15 @@ class OuvinteMicrofone:
         """
         Escuta o microfone e transcreve a fala em texto (pt-BR).
         Retorna string vazia caso não haja fala ou ruído inaudível.
+        Registra em `ultima_captura` a janela de tempo do áudio captado.
         """
+        self.ultima_captura = None
         try:
+            inicio = time.monotonic()
             audio = self.reconhecedor.listen(fonte, timeout=timeout, phrase_time_limit=phrase_time_limit)
+            fim = time.monotonic()
+            duracao = len(audio.frame_data) / float(audio.sample_rate * audio.sample_width)
+            self.ultima_captura = (max(inicio, fim - duracao), fim)
             texto = self.reconhecedor.recognize_google(audio, language="pt-BR")
             return texto.strip()
         except (sr.WaitTimeoutError, sr.UnknownValueError):

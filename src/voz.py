@@ -2,6 +2,7 @@ import asyncio
 import io
 import threading
 import time
+from collections import deque
 import edge_tts
 from gtts import gTTS
 from pygame import mixer
@@ -23,6 +24,8 @@ class SintetizadorVoz:
         self._token_geracao = 0
         self._edge_disponivel = True
         self.ultimo_texto = ""
+        # Intervalos [início, fim] (time.monotonic) em que o áudio do Bruxo foi reproduzido
+        self._historico_falas = deque(maxlen=10)
 
     async def _gerar_audio_edge(self, texto: str, velocidade: str = None) -> io.BytesIO:
         """Gera o áudio usando o serviço Neural Edge-TTS da Microsoft."""
@@ -47,6 +50,18 @@ class SintetizadorVoz:
         except Exception:
             return bool(self._gerando_audio)
 
+    def tempo_falando_entre(self, inicio: float, fim: float) -> float:
+        """
+        Retorna quantos segundos o Bruxo esteve reproduzindo áudio na janela [inicio, fim] (time.monotonic).
+        Permite descartar o que o microfone captou da própria voz do Bruxo (ex.: saudação do sensor).
+        """
+        agora = time.monotonic()
+        total = 0.0
+        for inicio_fala, fim_fala in list(self._historico_falas):
+            fim_efetivo = agora if fim_fala is None else fim_fala
+            total += max(0.0, min(fim, fim_efetivo) - max(inicio, inicio_fala))
+        return total
+
     def parar(self):
         """Interrompe imediatamente qualquer áudio em reprodução."""
         self._token_geracao += 1
@@ -62,6 +77,7 @@ class SintetizadorVoz:
             if token is not None and token != self._token_geracao:
                 return
             self._gerando_audio = True
+            intervalo = None
             try:
                 buffer_audio = None
                 if self._edge_disponivel:
@@ -81,6 +97,8 @@ class SintetizadorVoz:
                     return
 
                 mixer.music.load(buffer_audio, "mp3")
+                intervalo = [time.monotonic(), None]
+                self._historico_falas.append(intervalo)
                 mixer.music.play()
                 self._gerando_audio = False
 
@@ -90,6 +108,8 @@ class SintetizadorVoz:
             except Exception as e:
                 print(f"[ERRO VOZ]: {type(e).__name__}")
             finally:
+                if intervalo is not None:
+                    intervalo[1] = time.monotonic()
                 self._gerando_audio = False
 
     def falar(self, texto: str, prefixo: str = "BRUXO", aguardar: bool = False, velocidade: str = None):

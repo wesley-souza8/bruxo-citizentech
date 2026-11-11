@@ -42,6 +42,8 @@ class AssistenteBruxo:
     _cidadao_saudado = False
     _token_despedida = 0
     _thread_despedida = None
+    # Áudio captado que coincide por mais que isso com a fala do próprio Bruxo é tratado como eco
+    _TOLERANCIA_ECO_SEGUNDOS = 0.3
 
     def __init__(self):
         self.nome = NOME_ASSISTENTE
@@ -94,6 +96,17 @@ class AssistenteBruxo:
                 return True
 
         return False
+
+    def _captou_propria_voz(self) -> bool:
+        """
+        Verifica se o último áudio captado coincidiu com a reprodução da voz do próprio Bruxo
+        (ex.: saudação/despedida disparada pelo sensor enquanto o microfone já escutava).
+        Complementa _eh_eco, que falha quando a transcrição do eco sai distorcida.
+        """
+        janela = getattr(self.microfone, "ultima_captura", None)
+        if not isinstance(janela, tuple):
+            return False
+        return self.voz.tempo_falando_entre(*janela) > self._TOLERANCIA_ECO_SEGUNDOS
 
     def perguntar(
         self,
@@ -873,6 +886,10 @@ class AssistenteBruxo:
                     texto = self.microfone.escutar(fonte, timeout=TIMEOUT_PADRAO_ESCUTA, phrase_time_limit=LIMITE_FALA_PADRAO)
 
                     if not texto:
+                        continue
+
+                    if self._captou_propria_voz():
+                        print(f"[ECO IGNORADO]: \"{texto}\" (captado enquanto o Bruxo falava)")
                         continue
 
                     if self.voz.ultimo_texto and self._eh_eco(texto, self.voz.ultimo_texto):

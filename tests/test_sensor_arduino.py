@@ -1,15 +1,18 @@
 import os
 import tempfile
 import unittest
+from collections import deque
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from src.assistente import AssistenteBruxo
 from src.config import DESPEDIDA_TOTEM, SAUDACAO_TOTEM
 from src.ia_groq import ClienteIA
+from src.microfone import OuvinteMicrofone
 from src.reconhecimento import GerenciadorFacial
 from src.sensor_arduino import SensorArduino
 from src.servicos import ServicosWeb
+from src.voz import SintetizadorVoz
 
 
 class TestSensorArduino(unittest.TestCase):
@@ -243,6 +246,39 @@ class TestSensorArduino(unittest.TestCase):
         assistente.voz.falar.reset_mock()
         assistente.despedir_afastamento()
         assistente.voz.falar.assert_not_called()
+
+    def test_descarta_audio_captado_enquanto_o_bruxo_fala(self):
+        voz = SintetizadorVoz.__new__(SintetizadorVoz)
+        voz._historico_falas = deque([[10.0, 20.0]])  # Saudação reproduzida de 10 s a 20 s
+        self.assertAlmostEqual(voz.tempo_falando_entre(12.0, 18.0), 6.0)
+        self.assertAlmostEqual(voz.tempo_falando_entre(20.05, 23.0), 0.0)
+
+        assistente = AssistenteBruxo.__new__(AssistenteBruxo)
+        assistente.voz = voz
+        # Eco da saudação disparada pelo sensor durante a escuta (ex.: "bem-vindo ao autor tem cidadão")
+        assistente.microfone = SimpleNamespace(ultima_captura=(12.0, 18.0))
+        self.assertTrue(assistente._captou_propria_voz())
+        # Resposta do cidadão logo após o fim da fala do Bruxo não é descartada
+        assistente.microfone.ultima_captura = (19.9, 23.0)
+        self.assertFalse(assistente._captou_propria_voz())
+        assistente.microfone.ultima_captura = None
+        self.assertFalse(assistente._captou_propria_voz())
+
+        # Fala ainda em reprodução (sem fim registrado) também conta como eco
+        voz._historico_falas = deque([[10.0, None]])
+        assistente.microfone.ultima_captura = (12.0, 18.0)
+        self.assertTrue(assistente._captou_propria_voz())
+
+    def test_microfone_registra_janela_do_audio_captado(self):
+        ouvinte = OuvinteMicrofone()
+        ouvinte.reconhecedor = MagicMock()
+        ouvinte.reconhecedor.listen.return_value = SimpleNamespace(
+            frame_data=b"\x00" * 64000, sample_rate=16000, sample_width=2  # 2 s de áudio
+        )
+        ouvinte.reconhecedor.recognize_google.return_value = " como chego ao metrô "
+        with patch("src.microfone.time.monotonic", side_effect=[100.0, 105.0]):
+            self.assertEqual(ouvinte.escutar(fonte=None), "como chego ao metrô")
+        self.assertEqual(ouvinte.ultima_captura, (103.0, 105.0))
 
 
 if __name__ == "__main__":
