@@ -1,6 +1,7 @@
 import datetime
 from difflib import SequenceMatcher
 import re
+import threading
 import time
 import unicodedata
 import webbrowser
@@ -10,6 +11,7 @@ from src.captura import GerenciadorCaptura
 from src.config import (
     NOME_ASSISTENTE,
     SAUDACAO_TOTEM,
+    DESPEDIDA_TOTEM,
     DURACAO_SESSAO_TOTEM_SEGUNDOS,
     TIMEOUT_PADRAO_ESCUTA,
     TIMEOUT_RESPOSTA,
@@ -34,6 +36,12 @@ class AssistenteBruxo:
     - Executar o loop contínuo de escuta com acionamento por Wake Word.
     - Despachar intenções e comandos do usuário de forma modular (Dispatcher Pattern).
     """
+
+    # Despedida por voz quando o cidadão saudado se afasta do HC-SR04 (Estado 4)
+    _ESPERA_MAX_DESPEDIDA_SEGUNDOS = 30.0
+    _cidadao_saudado = False
+    _token_despedida = 0
+    _thread_despedida = None
 
     def __init__(self):
         self.nome = NOME_ASSISTENTE
@@ -724,10 +732,12 @@ class AssistenteBruxo:
         # 1. Despedida do cidadão (Estado 4: retorna ao Modo Standby) ou encerramento da aplicação
         if any(t in comando for t in ["desligar", "sair", "encerrar", "desliga"]):
             self._sessao_totem_ate = 0.0
+            self._cancelar_despedida()
             self.voz.falar("Bruxo saindo... KABUUUM!", aguardar=True)
             return "sair"
 
         if any(t in comando for t in ["tchau", "até logo", "ate logo", "até mais", "ate mais", "adeus"]):
+            self._cancelar_despedida()  # Já se despediu: não repete o "tchau" quando se afastar do sensor
             self.encerrar_sessao_totem()
             self.voz.falar("Foi um prazer orientar você! Voltando ao modo de espera.")
             return "standby"
@@ -777,6 +787,8 @@ class AssistenteBruxo:
         """
         if self.processando_comando or self.voz.esta_falando():
             return
+        self._cancelar_despedida()  # Novo cidadão: descarta despedida pendente de quem saiu antes
+        self._cidadao_saudado = True
         self._sessao_totem_ate = time.monotonic() + DURACAO_SESSAO_TOTEM_SEGUNDOS
         print(f"\n[TOTEM HC-SR04 - ESTADO 2]: Aproximação detectada a {distancia_cm:.1f} cm!")
         self.voz.falar(SAUDACAO_TOTEM)
@@ -786,6 +798,40 @@ class AssistenteBruxo:
         if self._sessao_totem_ate > 0.0:
             self._sessao_totem_ate = 0.0
             print("\n[TOTEM - ESTADO 4]: Retornando ao Modo Standby aguardando próximo cidadão.")
+
+    def despedir_afastamento(self):
+        """
+        Estado 4 por afastamento físico (callback do HC-SR04): retorna ao Modo Standby e,
+        se o cidadão foi saudado e ainda não disse "tchau", despede-se por voz.
+        Roda na thread do sensor, então a fala é delegada a uma thread própria.
+        """
+        self.encerrar_sessao_totem()
+        if not self._cidadao_saudado:
+            return
+        self._cidadao_saudado = False
+        self._token_despedida += 1
+        self._thread_despedida = threading.Thread(
+            target=self._falar_despedida,
+            args=(self._token_despedida,),
+            name="DespedidaTotemThread",
+            daemon=True,
+        )
+        self._thread_despedida.start()
+
+    def _falar_despedida(self, token: int):
+        """Fala a despedida assim que terminar a fala ou o comando em andamento, sem cortá-los."""
+        limite = time.monotonic() + self._ESPERA_MAX_DESPEDIDA_SEGUNDOS
+        while self.processando_comando or self.voz.esta_falando():
+            if token != self._token_despedida or time.monotonic() >= limite:
+                return
+            time.sleep(0.1)
+        if token == self._token_despedida:
+            self.voz.falar(DESPEDIDA_TOTEM)
+
+    def _cancelar_despedida(self):
+        """Descarta a despedida por afastamento (novo cidadão saudado, "tchau" ou desligamento)."""
+        self._cidadao_saudado = False
+        self._token_despedida += 1
 
     def _sessao_totem_ativa(self) -> bool:
         """Indica se o totem está na janela ativa de atendimento pós-aproximação."""
@@ -855,8 +901,9 @@ class AssistenteBruxo:
                     if status == "sair":
                         print("[ENCERRADO] Assistente Bruxo finalizado com sucesso.")
                         break
-                    elif status != "standby" and sessao_ativa:
+                    elif status != "standby" and sessao_ativa and self._sessao_totem_ate > 0.0:
                         # Renova a janela de atendimento após interação bem-sucedida
+                        # (se o cidadão se afastou durante o comando, permanece em Standby)
                         self._sessao_totem_ate = time.monotonic() + DURACAO_SESSAO_TOTEM_SEGUNDOS
 
                 except KeyboardInterrupt:

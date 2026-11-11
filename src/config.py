@@ -59,7 +59,9 @@ ARDUINO_BAUDRATE = _ler_int_env("ARDUINO_BAUDRATE", 9600)
 DISTANCIA_ATIVACAO_CM = _ler_float_env("DISTANCIA_ATIVACAO_CM", 50.0)
 COOLDOWN_TOTEM_SEGUNDOS = _ler_float_env("COOLDOWN_TOTEM_SEGUNDOS", 30.0)
 DURACAO_SESSAO_TOTEM_SEGUNDOS = _ler_float_env("DURACAO_SESSAO_TOTEM_SEGUNDOS", 45.0)
+CONFIRMACAO_AFASTAMENTO_SEGUNDOS = _ler_float_env("CONFIRMACAO_AFASTAMENTO_SEGUNDOS", 1.0)
 SAUDACAO_TOTEM = (
     "Olá! Bem-vindo ao Totem Cidadão. Detectei sua aproximação. "
     "Posso orientar seu trajeto, informar serviços ou ler um documento para você. Como posso ajudar?"
 )
+DESPEDIDA_TOTEM = "Tchau, até logo! Foi um prazer atender você."

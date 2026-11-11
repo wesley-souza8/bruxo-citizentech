@@ -9,6 +9,7 @@ from src.assistente import AssistenteBruxo
 from src.config import (
     ARDUINO_BAUDRATE,
     ARDUINO_PORTA,
+    CONFIRMACAO_AFASTAMENTO_SEGUNDOS,
     COOLDOWN_TOTEM_SEGUNDOS,
     DISTANCIA_ATIVACAO_CM,
 )
@@ -20,11 +21,12 @@ def main():
 
     sensor = SensorArduino(
         callback_aproximacao=assistente.saudar_aproximacao,
-        callback_afastamento=assistente.encerrar_sessao_totem,
+        callback_afastamento=assistente.despedir_afastamento,
         porta=ARDUINO_PORTA,
         baudrate=ARDUINO_BAUDRATE,
         distancia_limite_cm=DISTANCIA_ATIVACAO_CM,
         cooldown_segundos=COOLDOWN_TOTEM_SEGUNDOS,
+        confirmacao_afastamento_segundos=CONFIRMACAO_AFASTAMENTO_SEGUNDOS,
     )
 
     try:

@@ -23,7 +23,8 @@ class SensorArduino:
     - Detectar automaticamente a porta COM do Arduino (ou usar ARDUINO_PORTA configurada).
     - Escutar leituras de distância em thread daemon separada sem travar o assistente de voz.
     - Registrar telemetria de Standby (> 50 cm) de forma controlada e disparar saudação (< 50 cm)
-      com histerese, cooldown e callback de afastamento.
+      com histerese, cooldown e callback de afastamento (confirmado por leituras distantes contínuas,
+      para que um eco falso isolado não encerre o atendimento).
     """
 
     _PADRAO_DISTANCIA = re.compile(
@@ -55,6 +56,7 @@ class SensorArduino:
         cooldown_segundos: float = COOLDOWN_TOTEM_SEGUNDOS,
         timeout_ausencia_segundos: float = 5.0,
         intervalo_log_standby_segundos: float = 2.0,
+        confirmacao_afastamento_segundos: float = 0.0,
     ):
         self.callback_aproximacao = callback_aproximacao
         self.callback_afastamento = callback_afastamento
@@ -64,6 +66,8 @@ class SensorArduino:
         self.cooldown_segundos = max(0.0, float(cooldown_segundos))
         self.timeout_ausencia_segundos = max(1.0, float(timeout_ausencia_segundos))
         self.intervalo_log_standby_segundos = max(0.5, float(intervalo_log_standby_segundos))
+        # Tempo de leituras distantes contínuas para confirmar o afastamento (0 = imediato)
+        self.confirmacao_afastamento_segundos = max(0.0, float(confirmacao_afastamento_segundos))
 
         self._lock = threading.Lock()
         self._parar_evento = threading.Event()
@@ -74,6 +78,7 @@ class SensorArduino:
         self._ultimo_disparo = -math.inf
         self._ultima_deteccao = -math.inf
         self._ultimo_log_standby = -math.inf
+        self._afastamento_desde: float | None = None
 
     @classmethod
     def extrair_distancia(cls, linha: str) -> float | None:
@@ -132,6 +137,7 @@ class SensorArduino:
         """
         if self._em_presenca and (agora - self._ultima_deteccao) >= self.timeout_ausencia_segundos:
             self._em_presenca = False
+            self._afastamento_desde = None
             return True
         return False
 
@@ -154,6 +160,7 @@ class SensorArduino:
 
             if distancia_cm < self.distancia_limite_cm:
                 self._ultima_deteccao = instante
+                self._afastamento_desde = None
                 if not self._em_presenca:
                     self._em_presenca = True
                     if (instante - self._ultimo_disparo) >= self.cooldown_segundos:
@@ -165,8 +172,13 @@ class SensorArduino:
                     logar_standby = True
 
                 if self._em_presenca and distancia_cm >= self.distancia_limite_cm + 10.0:
-                    self._em_presenca = False
-                    notificar_afastamento = True
+                    # Só confirma o afastamento após leituras distantes contínuas (eco falso isolado não encerra)
+                    if self._afastamento_desde is None:
+                        self._afastamento_desde = instante
+                    if (instante - self._afastamento_desde) >= self.confirmacao_afastamento_segundos:
+                        self._em_presenca = False
+                        self._afastamento_desde = None
+                        notificar_afastamento = True
 
         if logar_standby:
             print(

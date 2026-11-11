@@ -62,7 +62,7 @@ Totens convencionais de atendimento público dependem de telas sensíveis ao toq
    * **Acessibilidade para Baixa Visão (OCR via Câmera):** Ao dizer *"Bruxo, escanear texto"*, posicionar um documento ou aviso físico na câmera e pressionar `S` na janela de captura, o módulo `src/leitura.py` lê o conteúdo em voz alta via `EasyOCR`.
    * **Identificação Biométrica Facial (Opcional):** Ao dizer *"Bruxo, quem sou eu?"*, o totem identifica usuários cadastrados pela câmera (`src/reconhecimento.py`).
 4. **Estado 4 — Liberação e Retorno ao Repouso:**
-   * Quando o cidadão se afasta (distância volta a ser superior a `50 cm`) ou se despede (*"Bruxo, tchau"* / *"tchau"*), o LED apaga, a sessão ativa é encerrada e o totem retorna ao **Modo Standby** aguardando o próximo usuário. *(Para encerrar o programa no terminal, diga `"Bruxo, desligar"` ou pressione `Ctrl + C`.)*
+   * Quando o cidadão se afasta (distância volta a ser superior a `50 cm` por cerca de `1 s`, ignorando ecos falsos isolados do sensor), o Bruxo **se despede por voz** (*"Tchau, até logo! Foi um prazer atender você."*) assim que termina a fala em andamento. Se o próprio cidadão disser *"Bruxo, tchau"* / *"tchau"*, a despedida acontece na hora e não se repete quando ele se afastar. Em ambos os casos o LED apaga, a sessão ativa é encerrada e o totem retorna ao **Modo Standby** aguardando o próximo usuário. *(Para encerrar o programa no terminal, diga `"Bruxo, desligar"` ou pressione `Ctrl + C`.)*
 
 ---
 
@@ -285,6 +285,7 @@ Consulte a simulação validada em [`img/Circuito.png`](img/Circuito.png) e faç
    DISTANCIA_ATIVACAO_CM=50
    COOLDOWN_TOTEM_SEGUNDOS=30
    DURACAO_SESSAO_TOTEM_SEGUNDOS=45
+   CONFIRMACAO_AFASTAMENTO_SEGUNDOS=1
    ```
 5. **Iniciar o Totem:**
    ```powershell
@@ -297,7 +298,7 @@ Consulte a simulação validada em [`img/Circuito.png`](img/Circuito.png) e faç
    * O Bruxo fala automaticamente via voz neural (`src/voz.py`):
      *"Olá! Bem-vindo ao Totem Cidadão. Detectei sua aproximação. Posso orientar seu trajeto, informar serviços ou ler um documento para você. Como posso ajudar?"*
 3. Após a saudação, o cidadão pode falar perguntas diretamente ou usando **"Bruxo, ..."** (IA generativa, leitura OCR de documentos, clima, reconhecimento facial, etc.).
-4. Ao se afastar (`> 50 cm`) ou dizer **"Bruxo, tchau"**, o totem volta ao **Modo Standby**.
+4. Ao se afastar (`> 50 cm`), o Bruxo se despede por voz (*"Tchau, até logo! Foi um prazer atender você."*) e o totem volta ao **Modo Standby** — o mesmo vale para **"Bruxo, tchau"** (sem repetir a despedida ao sair).
 5. Para encerrar o programa por completo no terminal, diga **"Bruxo, desligar"** ou pressione `Ctrl + C`.
 
 ### 🧪 Executar Testes Unitários (Sem Necessidade de Hardware Conectado)
@@ -317,5 +318,5 @@ python -m unittest discover -s tests -v
 | **"Bruxo, previsão do tempo"** | Consulta clima em tempo real via OpenWeather |
 | **"Bruxo, que horas são?"** / **"que dia é hoje?"** | Informa horário e data atuais por voz |
 | **"Bruxo, quem é você?"** / **"se apresente"** | Apresenta a identidade e funcionalidades do assistente |
-| **"Bruxo, tchau"** *(ou afastar-se `> 50 cm`)* | Finaliza o atendimento atual e retorna ao **Modo Standby** |
+| **"Bruxo, tchau"** *(ou afastar-se `> 50 cm`)* | Despede-se por voz, finaliza o atendimento atual e retorna ao **Modo Standby** |
 | **"Bruxo, desligar"** *(ou `Ctrl + C`)* | Encerra a aplicação Python e fecha a porta serial com segurança |

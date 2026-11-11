@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from src.assistente import AssistenteBruxo
-from src.config import SAUDACAO_TOTEM
+from src.config import DESPEDIDA_TOTEM, SAUDACAO_TOTEM
 from src.ia_groq import ClienteIA
 from src.reconhecimento import GerenciadorFacial
 from src.sensor_arduino import SensorArduino
@@ -189,6 +189,60 @@ class TestSensorArduino(unittest.TestCase):
         with patch("src.servicos.requests.get", return_value=SimpleNamespace(json=lambda: {"USDBRL": {"bid": "5.55"}})):
             msg_dolar = ServicosWeb().obter_cotacao_dolar()
         self.assertEqual(msg_dolar, "A cotação atual do dólar é de 5,55 reais.")
+
+    def test_afastamento_confirmado_ignora_eco_falso_isolado(self):
+        afastamentos = []
+        sensor = SensorArduino(
+            callback_aproximacao=lambda d: None,
+            callback_afastamento=lambda: afastamentos.append(True),
+            distancia_limite_cm=50.0,
+            cooldown_segundos=30.0,
+            timeout_ausencia_segundos=5.0,
+            confirmacao_afastamento_segundos=1.0,
+        )
+        self.assertTrue(sensor.processar_leitura(35.0, agora=10.0))
+
+        # Eco falso isolado (parede a 150 cm) com o cidadão ainda à frente: não encerra o atendimento
+        sensor.processar_leitura(150.0, agora=10.2)
+        sensor.processar_leitura(36.0, agora=10.4)
+        self.assertEqual(afastamentos, [])
+
+        # Afastamento real: leituras distantes contínuas por >= 1 s confirmam a saída
+        sensor.processar_leitura(150.0, agora=11.0)
+        sensor.processar_leitura(151.0, agora=11.6)
+        self.assertEqual(afastamentos, [])
+        sensor.processar_leitura(150.0, agora=12.0)
+        self.assertEqual(afastamentos, [True])
+
+    def test_despedida_por_voz_ao_afastar_sem_cortar_fala_nem_repetir_apos_tchau(self):
+        assistente = AssistenteBruxo.__new__(AssistenteBruxo)
+        assistente.voz = MagicMock()
+        assistente.voz.esta_falando.return_value = False
+        assistente.processando_comando = False
+        assistente._sessao_totem_ate = 0.0
+
+        # Cidadão saudado se afasta enquanto o Bruxo ainda fala: espera a fala terminar e então se despede
+        assistente.saudar_aproximacao(30.0)
+        assistente.voz.reset_mock()
+        assistente.voz.esta_falando.side_effect = [True, True, False]
+        assistente.despedir_afastamento()
+        assistente._thread_despedida.join(timeout=2)
+        self.assertEqual(assistente.voz.esta_falando.call_count, 3)
+        assistente.voz.falar.assert_called_once_with(DESPEDIDA_TOTEM)
+        self.assertFalse(assistente._sessao_totem_ativa())
+
+        # Novo afastamento sem nova saudação não repete a despedida
+        assistente.voz.esta_falando.side_effect = None
+        assistente.voz.falar.reset_mock()
+        assistente.despedir_afastamento()
+        assistente.voz.falar.assert_not_called()
+
+        # Quem já disse "tchau" não ouve uma segunda despedida ao se afastar
+        assistente.saudar_aproximacao(30.0)
+        assistente.processar_comando("tchau", fonte=None)
+        assistente.voz.falar.reset_mock()
+        assistente.despedir_afastamento()
+        assistente.voz.falar.assert_not_called()
 
 
 if __name__ == "__main__":
