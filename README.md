@@ -95,6 +95,8 @@ bruxo-citizentech/
 │   ├── Painel_Frontal_Olhos.png       # Cotas CAD: Painel frontal com furos do HC-SR04
 │   ├── Painel_Traseiro_USB.png        # Cotas CAD: Painel traseiro com passagem USB
 │   ├── Pecas.png                      # Visão geral das 6 faces no SolidCraft
+│   ├── Prototipo_Externo.jpg          # Foto do protótipo físico montado e fechado (MDF 3 mm + HC-SR04)
+│   ├── Prototipo_Interno.jpg          # Foto interna da montagem eletrônica (Arduino Uno + protoboard + LED ativo)
 │   └── prints/                        # Capturas geradas em runtime pelo comando de print
 │
 ├── rostos/                            # Datasets locais de biometria facial (ignorado pelo Git)
@@ -232,6 +234,12 @@ Consulte a simulação validada em [`img/Circuito.png`](img/Circuito.png) e faç
 4. **Fechamento com Tampa Removível:**
    * A `Tampa_Superior` (`120 × 100 mm`) deve permanecer **solta/apenas encaixada** por cima, garantindo acesso rápido aos circuitos para manutenção e demonstração interna durante a gravação do vídeo.
 5. **Conexão ao Computador Host:** Passe o cabo USB-B pelo rasgo traseiro e conecte o Arduino ao computador que executará o assistente **Bruxo** (com microfone, webcam e saída de áudio ativos).
+
+#### Protótipo Físico Montado (Bancada Maker Lab)
+
+| Vista Externa (Gabinete MDF 3 mm + HC-SR04) | Vista Interna (Arduino Uno + Protoboard + LED Ativo) |
+|---|---|
+| ![Protótipo Físico Externo](img/Prototipo_Externo.jpg) | ![Protótipo Físico Interno](img/Prototipo_Interno.jpg) |
 
 ---
 
